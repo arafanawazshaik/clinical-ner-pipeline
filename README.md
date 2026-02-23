@@ -113,3 +113,48 @@ clinical-ner-pipeline/
 | 2     | 0.0026    | 0.0009   | 0.9988 |
 
 *Trained on 500 synthetic clinical notes across 5 note types.*
+
+## Infrastructure
+
+### Docker
+```bash
+# Build image
+docker build -f docker/Dockerfile.inference -t clinical-ner-pipeline .
+
+# Run container
+docker run -p 8000:8000 -v ./models:/app/models:ro clinical-ner-pipeline
+
+# Full stack with monitoring
+docker-compose up -d
+```
+
+- **API** → http://localhost:8000
+- **Prometheus** → http://localhost:9090
+- **Grafana** → http://localhost:3000 (admin/admin)
+
+### Kubernetes
+```bash
+# Deploy
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+kubectl apply -f k8s/hpa.yaml
+
+# Check status
+kubectl get pods -n clinical-ner
+kubectl get hpa -n clinical-ner
+```
+
+**K8s features:**
+- 2 replicas with auto-scaling (2→8 pods based on CPU/memory)
+- Liveness and readiness probes via `/health`
+- Resource limits (2Gi memory, 2 CPU per pod)
+- Prometheus scraping annotations
+
+### Monitoring
+
+Prometheus metrics available at `/metrics`:
+- `ner_requests_total` — request count by endpoint and status
+- `ner_request_latency_seconds` — latency histogram
+- `ner_entities_extracted_total` — entities extracted by type
