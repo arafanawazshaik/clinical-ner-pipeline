@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ner-api-service
+  namespace: clinical-ner
+  labels:
+    app: ner-api
+spec:
+  type: ClusterIP
+  selector:
+    app: ner-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+      protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ner-api-external
+  namespace: clinical-ner
+spec:
+  type: LoadBalancer
+  selector:
+    app: ner-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000

@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ner-api
+  namespace: clinical-ner
+  labels:
+    app: ner-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ner-api
+  template:
+    metadata:
+      labels:
+        app: ner-api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: ner-api
+          image: clinical-ner-pipeline:latest
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "2000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+          volumeMounts:
+            - name: model-volume
+              mountPath: /app/models
+              readOnly: true
+      volumes:
+        - name: model-volume
+          persistentVolumeClaim:
+            claimName: ner-model-pvc
